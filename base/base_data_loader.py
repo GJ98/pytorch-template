@@ -1,61 +1,46 @@
-import numpy as np
-from torch.utils.data import DataLoader
-from torch.utils.data.dataloader import default_collate
-from torch.utils.data.sampler import SubsetRandomSampler
+import transformers
+import torch
+import pytorch_lightning as pl
+from module import dataset
 
 
-class BaseDataLoader(DataLoader):
-    """
-    Base class for all data loaders
-    """
-    def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, collate_fn=default_collate):
-        self.validation_split = validation_split
+class DataModule(pl.LightningDataModule):
+    def __init__(self, plm_name, dataset_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path, col_info, max_length):
+        super().__init__()
+        self.plm_name = plm_name
+        self.dataset_name = dataset_name
+        self.batch_size = batch_size
         self.shuffle = shuffle
 
-        self.batch_idx = 0
-        self.n_samples = len(dataset)
+        self.train_path = train_path
+        self.dev_path = dev_path
+        self.test_path = test_path
+        self.predict_path = predict_path
 
-        self.sampler, self.valid_sampler = self._split_sampler(self.validation_split)
+        self.train_dataset = None
+        self.val_dataset = None
+        self.test_dataset = None
+        self.predict_dataset = None
 
-        self.init_kwargs = {
-            'dataset': dataset,
-            'batch_size': batch_size,
-            'shuffle': self.shuffle,
-            'collate_fn': collate_fn,
-            'num_workers': num_workers
-        }
-        super().__init__(sampler=self.sampler, **self.init_kwargs)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(plm_name, max_length=max_length)
+        self.col_info = col_info
 
-    def _split_sampler(self, split):
-        if split == 0.0:
-            return None, None
-
-        idx_full = np.arange(self.n_samples)
-
-        np.random.seed(0)
-        np.random.shuffle(idx_full)
-
-        if isinstance(split, int):
-            assert split > 0
-            assert split < self.n_samples, "validation set size is configured to be larger than entire dataset."
-            len_valid = split
+    def setup(self, stage='fit'):
+        if stage == 'fit':
+            self.train_dataset = getattr(dataset, self.dataset_name)(self.train_path, self.tokenizer, self.col_info)
+            self.val_dataset = getattr(dataset, self.dataset_name)(self.dev_path, self.tokenizer, self.col_info)
         else:
-            len_valid = int(self.n_samples * split)
+            self.test_dataset = getattr(dataset, self.dataset_name)(self.test_path, self.tokenizer, self.col_info)
+            self.predict_dataset = getattr(dataset, self.dataset_name)(self.predict_path, self.tokenizer, self.col_info)
 
-        valid_idx = idx_full[0:len_valid]
-        train_idx = np.delete(idx_full, np.arange(0, len_valid))
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=self.shuffle)
 
-        train_sampler = SubsetRandomSampler(train_idx)
-        valid_sampler = SubsetRandomSampler(valid_idx)
+    def val_dataloader(self):
+        return torch.utils.data.DataLoader(self.val_dataset, batch_size=self.batch_size)
 
-        # turn off shuffle option which is mutually exclusive with sampler
-        self.shuffle = False
-        self.n_samples = len(train_idx)
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(self.test_dataset, batch_size=self.batch_size)
 
-        return train_sampler, valid_sampler
-
-    def split_validation(self):
-        if self.valid_sampler is None:
-            return None
-        else:
-            return DataLoader(sampler=self.valid_sampler, **self.init_kwargs)
+    def predict_dataloader(self):
+        return torch.utils.data.DataLoader(self.predict_dataset, batch_size=self.batch_size)
