@@ -1,4 +1,4 @@
-안녕하세요, NLP-11조 세븐일레븐입니다.
+안녕하세요, **NLP-11조 세븐일레븐**입니다.
 
 저희 팀의 템플릿도 소개 드려 보려고 합니다. 😊
 
@@ -14,7 +14,7 @@
 
 1. `config.yaml` 파일에서 `pwd`값을 현재 위치하신 디렉토리 위치로 바꿔주셔야 합니다. `pwd`(현재 디렉토리의 경로를 출력하는 cli 명령어)로 쉽게 찾으실 수 있습니다.
 2. 데이터 폴더를 템플릿 디렉토리 안으로 넣으셔야 합니다. 이때, 데이터 폴더 이름은 *data*로 해주시면 좋습니다.
-3. **Hugging Face CLI (Command Line Interface)**에 로그인해 주셔야 합니다. `huggingface-cli login` 명령어를 실행한 다음 api-token을 입력해주시면 됩니다.
+3. **Hugging Face CLI** (Command Line Interface)에 로그인해 주셔야 합니다. `huggingface-cli login` 명령어를 실행한 다음 api-token을 입력해주시면 됩니다.
 4. wandb를 사용할 경우 `config.yaml` 파일에서, `wandb.project_name`을 적절히 설정해야 합니다.
 
 ## How to use
