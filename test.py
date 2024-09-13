@@ -1,81 +1,72 @@
 import argparse
 import torch
 from tqdm import tqdm
-import data_loader.data_loaders as module_data
-import model.loss as module_loss
-import model.metric as module_metric
-import model.model as module_arch
+import base.base_data_loader as module_data
+import module.loss as module_loss
+import module.metric as module_metric
+import module.model as module_arch
 from parse_config import ConfigParser
+import pandas as pd
 
+def main(checkpoint_path):
+    checkpoint = torch.load(checkpoint_path)
+    config = checkpoint['config']
 
-def main(config):
-    logger = config.get_logger('test')
+    # 1. set data_module(=pl.DataModule class)
+    data_module = config.init_obj('data_module', module_data)
+    data_module.setup('test')
+    test_dataloader = data_module.test_dataloader()
+    predict_dataloader = data_module.predict_dataloader()
 
-    # setup data_loader instances
-    data_loader = getattr(module_data, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
-        batch_size=512,
-        shuffle=False,
-        validation_split=0.0,
-        training=False,
-        num_workers=2
-    )
-
-    # build model architecture
+    # 2. set model(=nn.Module class)
     model = config.init_obj('arch', module_arch)
-    logger.info(model)
+    model.load_state_dict(checkpoint['model_state_dict'])
 
-    # get function handles of loss and metrics
-    loss_fn = getattr(module_loss, config['loss'])
-    metric_fns = [getattr(module_metric, met) for met in config['metrics']]
-
-    logger.info('Loading checkpoint: {} ...'.format(config.resume))
-    checkpoint = torch.load(config.resume)
-    state_dict = checkpoint['state_dict']
-    if config['n_gpu'] > 1:
-        model = torch.nn.DataParallel(model)
-    model.load_state_dict(state_dict)
-
-    # prepare model for testing
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # 3. set deivce(cpu or gpu)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     model.eval()
 
-    total_loss = 0.0
-    total_metrics = torch.zeros(len(metric_fns))
+    # 4. set loss function & matrics 
+    criterion = getattr(module_loss, config['loss'])
+    metrics = [getattr(module_metric, met) for met in config['metrics']]
 
+    outputs, targets = [], []
+    total_loss = 0
     with torch.no_grad():
-        for i, (data, target) in enumerate(tqdm(data_loader)):
+        for (data, target) in tqdm(test_dataloader):
             data, target = data.to(device), target.to(device)
             output = model(data)
+            loss = criterion(output, target)
+            total_loss += loss.item()
+            outputs.append(output)
+            targets.append(target)
 
-            #
-            # save sample images, or do something with output here
-            #
+    outputs = torch.cat(outputs).squeeze()
+    targets = torch.cat(targets).squeeze()
+    result = {}
+    result["val_loss"] = total_loss/len(test_dataloader)
+    for metric in metrics:
+        result[f"val_{metric.__name__}"] = metric(outputs, targets)
+    
+    output = pd.read_csv(config["data_module"]["args"]["test_path"])
+    output['target'] = outputs.tolist()
+    output.to_csv('output.csv', index=False)
+    print(result)
 
-            # computing loss, metrics on test set
-            loss = loss_fn(output, target)
-            batch_size = data.shape[0]
-            total_loss += loss.item() * batch_size
-            for i, metric in enumerate(metric_fns):
-                total_metrics[i] += metric(output, target) * batch_size
+    outputs = []
+    with torch.no_grad():
+        for data in tqdm(predict_dataloader):
+            data = data.to(device)
+            output = model(data)
+            outputs.append(output)
 
-    n_samples = len(data_loader.sampler)
-    log = {'loss': total_loss / n_samples}
-    log.update({
-        met.__name__: total_metrics[i].item() / n_samples for i, met in enumerate(metric_fns)
-    })
-    logger.info(log)
-
+    outputs = torch.cat(outputs).squeeze()
+    output = pd.read_csv('./data/sample_submission.csv')
+    output['target'] = outputs.tolist()
+    output.to_csv('predict.csv', index=False)
 
 if __name__ == '__main__':
-    args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
-                      help='config file path (default: None)')
-    args.add_argument('-r', '--resume', default=None, type=str,
-                      help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
-                      help='indices of GPUs to enable (default: all)')
 
-    config = ConfigParser.from_args(args)
-    main(config)
+    checkpoint_path = "./saved/STSModel_monologg-koelectra-base-v3-discriminator_val_pearson=0.9263085722923279.pth"
+    main(checkpoint_path)

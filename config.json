@@ -4,14 +4,14 @@
 
     "arch": {
         "type": "STSModel",
-        "args": {"plm_name": "klue/roberta-small"}
+        "args": {"plm_name": "snunlp/KR-ELECTRA-discriminator"}
     },
     "data_module": {
         "type": "DataModule",
         "args":{
-            "plm_name": "klue/roberta-small",
+            "plm_name": "snunlp/KR-ELECTRA-discriminator",
             "dataset_name": "STSDataset",
-            "batch_size": 32,
+            "batch_size": 16,
             "shuffle": true,
             "train_path": "./data/train.csv",
             "dev_path": "./data/dev.csv",
@@ -27,7 +27,7 @@
     "optimizer": {
         "type": "Adam",
         "args":{
-            "lr": 0.001,
+            "lr": 0.00002,
             "weight_decay": 0,
             "amsgrad": true
         }
@@ -44,7 +44,7 @@
         }
     },
     "trainer": {
-        "epochs": 10,
+        "epochs": 15,
 
         "save_dir": "saved/",
         "save_period": 1,
@@ -56,7 +56,7 @@
         "tensorboard": true
     },
     "wandb": {
-        "project_name": "test",
+        "project_name": "backbone_model",
         "run_name": "test"
     }
 }

@@ -72,13 +72,23 @@ class Trainer(BaseTrainer):
         for metric in self.metric_ftns:
             result[f"val_{metric.__name__}"] = metric(outputs, targets)
 
-        # 2.2. save model if model break best score
+        # 2.2. upload result by wandb
+        wandb.log(result)
+
+        # 2.3. save model if model break best score
         if self.mode == "min" and result[f"val_{self.config['metrics'][0]}"] < self.best_score:
             self.best_score = result[f"val_{self.config['metrics'][0]}"]
+            self.save(epoch)
+
             torch.save(self.model, self.save_file)
         if self.mode == "max" and result[f"val_{self.config['metrics'][0]}"] > self.best_score: 
             self.best_score = result[f"val_{self.config['metrics'][0]}"]
-            torch.save(self.model, self.save_file)
+            self.save(epoch)
 
-        # 2.2. upload result by wandb
-        wandb.log(result, step=epoch)
+    def save(self, epoch):
+        torch.save({ 'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'config': self.config,
+            f'val_{self.config["metrics"][0]}': self.best_score,
+        }, f"{self.save_file}_val_{self.config['metrics'][0]}={self.best_score}.pth")

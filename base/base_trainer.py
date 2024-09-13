@@ -23,7 +23,7 @@ class BaseTrainer:
         self.best_score = float('inf') if self.mode == "min" else 0
         if not os.path.exists(config["trainer"]["save_dir"]):
             os.makedirs(config["trainer"]["save_dir"])
-        self.save_file = f'{config["trainer"]["save_dir"]}{self.config["arch"]["type"]}-{self.config["arch"]["args"]["plm_name"]}'.replace("/", "-")
+        self.save_file = f'{config["trainer"]["save_dir"]}'+f'{self.config["arch"]["type"]}_{self.config["arch"]["args"]["plm_name"]}'.replace("/", "-")
 
     @abstractmethod
     def _train_epoch(self, epoch):
@@ -38,7 +38,7 @@ class BaseTrainer:
         """
         Full training logic
         """
-        wandb.init(project=self.config['wandb']['project_name'], name=self.config['wandb']['run_name'])
+        wandb.init(project=self.config['wandb']['project_name'], name=self.save_file.split("/")[1])
         for epoch in range(self.epochs + 1):
             self._train_epoch(epoch)
 
