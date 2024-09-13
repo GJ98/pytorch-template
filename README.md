@@ -100,7 +100,7 @@ pytorch-template
 ├── base/ 
 |   ├── base_data_loader.py
 |   ├── base_dataset.py
-|		└── base_trainer.py
+|	└── base_trainer.py
 ├── module/   
 |   ├── dataset.py        # dataset class 구현
 |   ├── loss.py           # loss function 구현
@@ -118,4 +118,4 @@ pytorch-template
 └── utils.py         
 ```
 
-글 작성에 많은 도움을 주신 임상엽_T7427, 이재협_T7419 팀원에게 감사의 말씀을 드립니다.
+글 작성에 많은 도움을 주신 [임상엽_T7427](https://github.com/gityeop), [이재협_T7419](https://github.com/jhyeop) 팀원에게 감사의 말씀을 드립니다.
