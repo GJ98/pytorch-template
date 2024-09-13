@@ -1,10 +1,10 @@
-pwd: /data/ephemeral/home/gj/pytorch-template
+pwd: /data/ephemeral/home/pytorch-template
 
 name: STS
 
 arch:
   type: STSModel
-  args: 
+  args:
     plm_name: monologg/koelectra-base-v3-discriminator
 
 data_module:
@@ -31,9 +31,7 @@ optimizer:
     amsgrad: true
 
 loss: l1_loss
-metrics: [
-  pearson
-]
+metrics: [pearson]
 
 lr_scheduler:
   type: StepLR
