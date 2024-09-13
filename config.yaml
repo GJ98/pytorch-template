@@ -1,11 +1,11 @@
-pwd: /data/ephemeral/home/gj/pytorch-template/
+pwd: /data/ephemeral/home/gj/pytorch-template
 
 name: STS
 
 arch:
   type: STSModel
   args: 
-    plm_name: beomi/KcELECTRA-base-v2022
+    plm_name: monologg/koelectra-base-v3-discriminator
 
 data_module:
   type: DataModule
@@ -17,7 +17,7 @@ data_module:
     train_path: ${pwd}/data/train.csv
     dev_path: ${pwd}/data/dev.csv
     test_path: ${pwd}/data/dev.csv
-    predict_path: ${pwd}/data/test/csv
+    predict_path: ${pwd}/data/test.csv
     max_length: 160
     col_info:
       label: label
@@ -30,7 +30,7 @@ optimizer:
     weight_decay: 0
     amsgrad: true
 
-loss: l2_loss
+loss: l1_loss
 metrics: [
   pearson
 ]
@@ -42,11 +42,9 @@ lr_scheduler:
     gamma: 0.1
 
 trainer:
-  epochs: 5
-  save_dir: saved/
+  epochs: 15
+  save_dir: ${pwd}/saved/
   mode: max
 
 wandb:
   project_name: backbone_model
-
-

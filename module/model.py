@@ -12,3 +12,16 @@ class STSModel(nn.Module):
     def forward(self, x):
         x = self.plm(x)['logits']
         return x
+
+class NewSTSModel(nn.Module):
+    def __init__(self, plm_name):
+        super().__init__()
+        self.plm_name = plm_name
+        self.plm = transformers.AutoModel.from_pretrained(
+            pretrained_model_name_or_path=plm_name, num_labels=1, use_auth_token=True)
+        self.classifcation_head = nn.
+    
+    def forward(self, x):
+        x = self.plm(x)['logits']
+        last_hidden_states = outputs.last_hidden_state
+        return x

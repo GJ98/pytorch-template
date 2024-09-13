@@ -24,12 +24,11 @@ class DataModule(pl.LightningDataModule):
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(plm_name, max_length=max_length)
         self.col_info = col_info
+        self.setup()
 
-    def setup(self, stage='fit'):
-        if stage == 'fit':
+    def setup(self, ):
             self.train_dataset = getattr(dataset, self.dataset_name)(self.train_path, self.tokenizer, self.col_info)
             self.val_dataset = getattr(dataset, self.dataset_name)(self.dev_path, self.tokenizer, self.col_info)
-        else:
             self.test_dataset = getattr(dataset, self.dataset_name)(self.test_path, self.tokenizer, self.col_info)
             self.predict_dataset = getattr(dataset, self.dataset_name)(self.predict_path, self.tokenizer, self.col_info)
 

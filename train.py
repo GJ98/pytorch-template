@@ -1,12 +1,13 @@
 import argparse
 import torch
 import numpy as np
-import base.base_data_loader as data_modules
+import base.base_data_loader as module_data
 import module.loss as module_loss
 import module.metric as module_metric
 import module.model as module_arch
 from module.trainer import Trainer
 from omegaconf import DictConfig, OmegaConf
+from utils import *
 import hydra
 
 
@@ -17,8 +18,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
-def init_obj(module_name, module_args, module, *args):
-    return getattr(module, module_name)(*args, **module_args)
+
 
 @hydra.main(config_path=".", config_name="config")
 def main(cfg):
@@ -27,7 +27,7 @@ def main(cfg):
     config = OmegaConf.to_container(cfg, resolve=True)
     
     # 1. set data_module(=pl.DataModule class)
-    data_module = init_obj(config['data_module']['type'], config['data_module']['args'], data_modules)
+    data_module = init_obj(config['data_module']['type'], config['data_module']['args'], module_data)
 
     # 2. set model(=nn.Module class)
     model = init_obj(config['arch']['type'], config['arch']['args'], module_arch)

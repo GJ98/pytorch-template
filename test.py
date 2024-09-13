@@ -5,9 +5,12 @@ import base.base_data_loader as module_data
 import module.loss as module_loss
 import module.metric as module_metric
 import module.model as module_arch
-from parse_config import ConfigParser
 import pandas as pd
+import hydra
+from omegaconf import DictConfig, OmegaConf
 import os
+
+from utils import *
 
 def inference(dataloader, model, criterion, metrics, device):
     outputs, targets = [], []
@@ -36,15 +39,13 @@ def main(checkpoint_path):
     config['data_module']['args']['shuffle'] = False
 
     # 1. set data_module(=pl.DataModule class)
-    data_module = config.init_obj('data_module', module_data)
-    data_module.setup('test')
-    data_module.setup('fit')
+    data_module = init_obj(config['data_module']['type'], config['data_module']['args'], module_data)
     train_dataloader = data_module.train_dataloader()
     test_dataloader = data_module.test_dataloader()
     predict_dataloader = data_module.predict_dataloader()
 
     # 2. set model(=nn.Module class)
-    model = config.init_obj('arch', module_arch)
+    model = init_obj(config['arch']['type'], config['arch']['args'], module_arch)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # 3. set deivce(cpu or gpu)
@@ -63,10 +64,11 @@ def main(checkpoint_path):
     print(test_result)
   
     # 6. save output
-    if not os.path.exists('output/'):
-        os.makedirs('output/')
+    pwd = os.getcwd()
+    if not os.path.exists(f'{pwd}/output/'):
+        os.makedirs(f'{pwd}/output/')
     folder_name = checkpoint_path.split("/")[-1].replace(".pth", "")
-    folder_path = f'output/{folder_name}'
+    folder_path = f'{pwd}/output/{folder_name}'
     os.makedirs(folder_path)
 
     train_df = pd.read_csv(config["data_module"]["args"]["train_path"])
@@ -84,11 +86,11 @@ def main(checkpoint_path):
             outputs.append(output)
 
     outputs = torch.cat(outputs).squeeze()
-    test_df = pd.read_csv('./data/sample_submission.csv')
+    test_df = pd.read_csv(f'{pwd}/data/sample_submission.csv')
     test_df['target'] = outputs.tolist()
     test_df.to_csv(f'{folder_path}/test_output.csv', index=False)
 
 if __name__ == '__main__':
 
-    checkpoint_path = "/data/ephemeral/home/gj/pytorch-template/saved/STSModel_snunlp-KR-ELECTRA-discriminator_val_pearson=0.9253344535827637.pth"
+    checkpoint_path = "/data/ephemeral/home/gj/pytorch-template/saved/STSModel_monologg-koelectra-base-v3-discriminator_val_pearson=0.8740063309669495.pth"
     main(checkpoint_path)

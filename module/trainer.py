@@ -16,8 +16,6 @@ class Trainer(BaseTrainer):
         self.device = device
         self.data_module = data_module
         self.lr_scheduler = lr_scheduler
-        # make train dataset & validation dataset
-        self.data_module.setup('fit')
         self.train_dataloader = self.data_module.train_dataloader()
         self.valid_dataloader = self.data_module.val_dataloader()
 
