@@ -5,8 +5,9 @@ import base.base_data_loader as data_modules
 import module.loss as module_loss
 import module.metric as module_metric
 import module.model as module_arch
-from parse_config import ConfigParser
-from trainer import Trainer
+from module.trainer import Trainer
+from omegaconf import DictConfig, OmegaConf
+import hydra
 
 
 # fix random seeds for reproducibility
@@ -16,15 +17,20 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
-def main(config):
-    logger = config.get_logger('train')
+def init_obj(module_name, module_args, module, *args):
+    return getattr(module, module_name)(*args, **module_args)
 
+@hydra.main(config_path=".", config_name="config")
+def main(cfg):
+
+    # 0. DictConfig to dict
+    config = OmegaConf.to_container(cfg, resolve=True)
+    
     # 1. set data_module(=pl.DataModule class)
-    data_module = config.init_obj('data_module', data_modules)
+    data_module = init_obj(config['data_module']['type'], config['data_module']['args'], data_modules)
 
     # 2. set model(=nn.Module class)
-    model = config.init_obj('arch', module_arch)
-    logger.info(model)
+    model = init_obj(config['arch']['type'], config['arch']['args'], module_arch)
 
     # 3. set deivce(cpu or gpu)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,8 +42,8 @@ def main(config):
 
     # 5. set optimizer & learning scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
-    lr_scheduler = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer)
+    optimizer = init_obj(config['optimizer']['type'], config['optimizer']['args'], torch.optim, trainable_params)
+    lr_scheduler = init_obj(config['lr_scheduler']['type'], config['lr_scheduler']['args'], torch.optim.lr_scheduler, optimizer)
 
     # 6. 위에서 설정한 내용들을 trainer에 넣는다.
     trainer = Trainer(model, criterion, metrics, optimizer,
@@ -51,13 +57,4 @@ def main(config):
 
 
 if __name__ == '__main__':
-    args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
-                      help='config file path (default: None)')
-    args.add_argument('-r', '--resume', default=None, type=str,
-                      help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
-                      help='indices of GPUs to enable (default: all)')
-
-    config = ConfigParser.from_args(args)
-    main(config)
+    main()

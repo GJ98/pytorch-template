@@ -1,6 +1,6 @@
 # Manual
 하이퍼 파라미터를 수정하고 싶은 경우, `config.json` 파일에서 수정하시면 됩니다.
-커스터마이징을 하고 싶은 경우, `module` 폴더 안에서 작업하시면 됩니다.
+모델 혹은 데이터셋 전처리 과정을 커스터마이징을 하고 싶은 경우, `module` 폴더 안에서 작업하시면 됩니다.
 ## 1. customizing dataset
 1. `module/dataset.py`에서 `BaseDataset`을 상속 받은 클래스를 생성합니다.
 2. 해당 클래스에 `preprocessing`함수를 구현합니다.  
@@ -29,5 +29,7 @@
 
 
 ## 추가
-- `wandb`를 사용할 경우 `config.json` 파일에서, `wandb.project_name`, `wandb.run_name`을 적절히 설정해야 합니다.
+- `wandb`를 사용할 경우 `config.json` 파일에서, `wandb.project_name`을 적절히 설정해야 합니다.
+- `test.py`에서 모델에 대한 train/dev/test dataset의 예측값이 `output`폴더 안에 저장됩니다.  
+이때, 모델의 checkpoint 경로를 `checkpoint_path` 변수에 넣어줘야 합니다.
 

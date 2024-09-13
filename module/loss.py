@@ -8,4 +8,4 @@ def l1_loss(output, target):
     return F.l1_loss(output.squeeze(), target.squeeze())
 
 def l2_loss(output, target):
-    return F.l2_loss(output.squeeze(), target.squeeze())
+    return F.mse_loss(output.squeeze(), target.squeeze())
