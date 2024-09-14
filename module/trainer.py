@@ -23,6 +23,7 @@ class Trainer(BaseTrainer):
  
         self.model.train()
         self.len_epoch = len(self.train_dataloader)
+        total_loss = 0
         for (data, target) in tqdm(self.train_dataloader, total=len(self.train_dataloader), desc=f"epoch {epoch} training"):
             # 1.1. prepare data
             data, target = data.to(self.device), target.to(self.device)
@@ -32,13 +33,18 @@ class Trainer(BaseTrainer):
             output = self.model(data)
             # 1.4. calculate loss
             loss = self.criterion(output, target)
+            total_loss = loss.item()
             # 1.5. calculate gradient
             loss.backward()
             # 1.6. optimize parameter
             self.optimizer.step()
     
-            # 1.7. upload train loss by wandb
-            wandb.log({"train_loss": loss.item()})
+            # 1.7. provide train loss
+            if self.config['wandb']['enable']:
+                # 1.7.1. upload train loss by wandb
+                wandb.log({"train_loss": loss.item()})
+        # 1.7.2. print train loss
+        print(f"train_loss: {total_loss/len(self.train_dataloader)}")
 
         # 2. validate model
         self._valid_epoch(epoch)
@@ -70,8 +76,12 @@ class Trainer(BaseTrainer):
         for metric in self.metric_ftns:
             result[f"val_{metric.__name__}"] = metric(outputs, targets)
 
-        # 2.2. upload result by wandb
-        wandb.log(result)
+        # 2.2. provide result
+        if self.config['wandb']['enable']:
+            # 2.2.1 upload result by wandb
+            wandb.log(result)
+        # 2.2.2. print result
+        print(", ".join(f'{key}: {value}'for key, value in result.items()))
 
         # 2.3. save model if model break best score
         if self.mode == "min" and result[f"val_{self.config['metrics'][0]}"] < self.best_score:

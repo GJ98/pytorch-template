@@ -43,9 +43,10 @@ class BaseTrainer:
         """
         Full training logic
         """
-        wandb.init(
-            project=self.config["wandb"]["project_name"],
-            name=self.save_file.split("/")[-1],
-        )
+        if self.config['wandb']['enable']:
+            wandb.init(
+                project=self.config["wandb"]["project_name"],
+                name=self.save_file.split("/")[-1],
+            )
         for epoch in range(self.epochs + 1):
             self._train_epoch(epoch)

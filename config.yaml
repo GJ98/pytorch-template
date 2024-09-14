@@ -5,7 +5,7 @@ name: STS
 arch:
   type: STSModel
   args:
-    plm_name: monologg/koelectra-base-v3-discriminator
+    plm_name: snunlp/KR-ELECTRA-discriminator
 
 data_module:
   type: DataModule
@@ -30,7 +30,7 @@ optimizer:
     weight_decay: 0
     amsgrad: true
 
-loss: l1_loss
+loss: l2_loss
 metrics: [pearson]
 
 lr_scheduler:
@@ -45,4 +45,5 @@ trainer:
   mode: max
 
 wandb:
+  enable: false
   project_name: backbone_model

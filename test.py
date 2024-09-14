@@ -1,4 +1,3 @@
-import argparse
 import torch
 from tqdm import tqdm
 import base.base_data_loader as module_data
@@ -6,8 +5,6 @@ import module.loss as module_loss
 import module.metric as module_metric
 import module.model as module_arch
 import pandas as pd
-import hydra
-from omegaconf import DictConfig, OmegaConf
 import os
 
 from utils import *
@@ -49,7 +46,12 @@ def main(checkpoint_path):
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # 3. set deivce(cpu or gpu)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     model = model.to(device)
     model.eval()
 
@@ -92,5 +94,5 @@ def main(checkpoint_path):
 
 if __name__ == '__main__':
 
-    checkpoint_path = "/data/ephemeral/home/gj/pytorch-template/saved/STSModel_monologg-koelectra-base-v3-discriminator_val_pearson=0.8740063309669495.pth"
+    checkpoint_path = "/data/ephemeral/home/gj/pytorch-template/saved/STSModel_snunlp-KR-ELECTRA-discriminator_val_pearson=0.9253344535827637.pth"
     main(checkpoint_path)

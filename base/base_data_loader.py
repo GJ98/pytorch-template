@@ -1,10 +1,9 @@
 import transformers
 import torch
-import pytorch_lightning as pl
 from module import dataset
 
 
-class DataModule(pl.LightningDataModule):
+class DataModule:
     def __init__(self, plm_name, dataset_name, batch_size, shuffle, train_path, dev_path, test_path, predict_path, col_info, max_length):
         super().__init__()
         self.plm_name = plm_name
@@ -26,7 +25,7 @@ class DataModule(pl.LightningDataModule):
         self.col_info = col_info
         self.setup()
 
-    def setup(self, ):
+    def setup(self):
             self.train_dataset = getattr(dataset, self.dataset_name)(self.train_path, self.tokenizer, self.col_info)
             self.val_dataset = getattr(dataset, self.dataset_name)(self.dev_path, self.tokenizer, self.col_info)
             self.test_dataset = getattr(dataset, self.dataset_name)(self.test_path, self.tokenizer, self.col_info)

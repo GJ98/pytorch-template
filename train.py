@@ -1,4 +1,3 @@
-import argparse
 import os
 import torch
 import numpy as np
@@ -25,6 +24,7 @@ np.random.seed(SEED)
 def main(cfg):
 
     # 0. DictConfig to dict
+    cfg.pwd = os.getcwd()
     config = OmegaConf.to_container(cfg, resolve=True)
 
     # 1. set data_module(=pl.DataModule class)
