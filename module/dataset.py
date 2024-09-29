@@ -1,18 +1,21 @@
 import torch
+import re
 import pandas as pd
 from abc import *
-from base.base_dataset import BaseDataset
+from base.base_dataset import *
+from itertools import accumulate
 from tqdm.auto import tqdm
 
-class STSDataset(BaseDataset):
-    def __init__(self, data_path, tokenizer, col_info):
+
+class DefaultDataset(BaseDataset):
+    def __init__(self, dataframe, tokenizer, col_info, max_length):
         """
         Args:
-            data_path (str): csv data file path
+            dataframe (pandas.core.frame.DataFrame): DataFrame object
             tokenizer : tokenizer
             col_info (dict): csv column information
         """
-        super().__init__(data_path, tokenizer, col_info)
+        super().__init__(dataframe, tokenizer, col_info, max_length)
 
     def preprocessing(self, data):
         """
@@ -27,7 +30,8 @@ class STSDataset(BaseDataset):
             targets = data[self.col_info['label']].values.tolist()
         except:
             targets = []
-        # 텍스트 데이터를 전처리합니다.
+
+        # tokenizing by pre-train tokenizer
         inputs = self.tokenizing(data)
 
         return inputs, targets
@@ -35,8 +39,10 @@ class STSDataset(BaseDataset):
     def tokenizing(self, dataframe):
         data = []
         for idx, item in tqdm(dataframe.iterrows(), desc='tokenizing', total=len(dataframe)):
-            # 두 입력 문장을 [SEP] 토큰으로 이어붙여서 전처리합니다.
             text = '[SEP]'.join([item[text_column] for text_column in self.col_info['input']])
-            outputs = self.tokenizer(text, add_special_tokens=True, padding='max_length', truncation=True)
-            data.append(outputs['input_ids'])
+            outputs = self.tokenizer(text, add_special_tokens=True, padding='max_length', truncation=True, max_length=self.max_length)
+
+            data.append({'input_ids': outputs['input_ids'], 
+                         'token_type_ids': outputs['token_type_ids'],
+                         'attention_mask': outputs['attention_mask']})        
         return data

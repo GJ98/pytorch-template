@@ -1,13 +1,13 @@
 import os
 import torch
 import numpy as np
-import base.base_data_loader as module_data
 import module.loss as module_loss
 import module.metric as module_metric
 import module.model as module_arch
-from module.trainer import Trainer
+import module.data_module as module_data
+from module.trainer import *
 from omegaconf import DictConfig, OmegaConf
-from utils import *
+from utils.utils import *
 import hydra
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -23,20 +23,33 @@ np.random.seed(SEED)
 @hydra.main(config_path=".", config_name="config", version_base=None)
 def main(cfg):
 
-    # 0. DictConfig to dict
+    # configuration
     cfg.pwd = os.getcwd()
+    # 0. DictConfig to dict
     config = OmegaConf.to_container(cfg, resolve=True)
 
-    # 1. set data_module(=pl.DataModule class)
+    # 0.1. initialize wandb run
+    if config['wandb']['enable']:
+        wandb.init(project=config["wandb"]["project_name"])
+
+    # 0.2. naming wandb run
+    config['run_name'] = \
+        f"plm={config['arch']['args']['plm_name']}"
+    wandb.run.name = config['run_name']
+    wandb.run.save()
+    print(f"run name: {config['run_name']}")
+
+    # 1. set data module
     data_module = init_obj(
         config["data_module"]["type"], config["data_module"]["args"], module_data
     )
+    # 1.1. initialize dataset
+    data_module.setup()
 
-    # 2. set model(=nn.Module class)
+    # 2. set model
     model = init_obj(config["arch"]["type"], config["arch"]["args"], module_arch)
 
     # 3. set deivce(cpu or gpu)
-    # 장치 설정
     if torch.cuda.is_available():
         device = torch.device("cuda")
     elif torch.backends.mps.is_available():
@@ -65,7 +78,7 @@ def main(cfg):
     )
 
     # 6. 위에서 설정한 내용들을 trainer에 넣는다.
-    trainer = Trainer(
+    trainer = DefaultTrainer(
         model,
         criterion,
         metrics,
@@ -77,7 +90,7 @@ def main(cfg):
     )
 
     # 6. train
-    trainer.train()
+    best_dev_output = trainer.train()
 
 
 if __name__ == "__main__":
